@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import { logger } from './utils/logger';
+import mongoose from 'mongoose';
 
 // Import routes (akan dibuat nanti)
 // import authRoutes from './routes/auth';
@@ -40,11 +41,24 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
+  const dbStatus = mongoose.connection.readyState;
+  const dbStatusMap: Record<number, string> = {
+    0: 'disconnected',
+    1: 'connected',
+    2: 'connecting',
+    3: 'disconnecting'
+  };
+  const dbStatusText = dbStatusMap[dbStatus] || 'unknown';
+
   res.status(200).json({
     status: 'OK',
     message: 'Action Romance Comedy Backend is running!',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    database: {
+      status: dbStatusText,
+      readyState: dbStatus
+    }
   });
 });
 

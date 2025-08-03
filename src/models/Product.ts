@@ -19,25 +19,28 @@ export interface IProduct extends Document {
   slug: string;
   description: string;
   shortDescription?: string;
-  category: mongoose.Types.ObjectId; // FIXED: Changed from string to ObjectId
+  category: mongoose.Types.ObjectId;
   brand?: string;
   tags: string[];
   skus: ISKU[];
-  basePrice: number; // Starting price
-  images: string[]; // Main product images
+  basePrice: number;
+  images: string[];
   features: string[];
   materials: string[];
   careInstructions: string[];
-  sizeChart?: string; // URL to size chart image
+  sizeChart?: string;
   isActive: boolean;
   isFeatured: boolean;
   metaTitle?: string;
   metaDescription?: string;
-  totalStock: number; // Calculated from all SKUs
+  totalStock: number;
   averageRating: number;
   reviewCount: number;
   createdAt: Date;
   updatedAt: Date;
+  
+  // Add method declaration
+  generateSKU(size: string, color: string, categoryCode: string): string;
 }
 
 const SKUSchema = new Schema<ISKU>({
