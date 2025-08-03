@@ -45,7 +45,7 @@ CategorySchema.pre('save', function(next) {
 });
 
 // Indexes
-CategorySchema.index({ slug: 1 });
+// CategorySchema.index({ slug: 1 }); // REMOVE - sudah unique: true
 CategorySchema.index({ parentCategory: 1 });
 CategorySchema.index({ isActive: 1, sortOrder: 1 });
 

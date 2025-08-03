@@ -111,8 +111,9 @@ UserSchema.methods.comparePassword = async function(candidatePassword: string): 
 };
 
 // Indexes
-UserSchema.index({ email: 1 });
-UserSchema.index({ referralCode: 1 });
-UserSchema.index({ referredBy: 1 });
+// Remove duplicate indexes - email and referralCode already have unique: true
+// UserSchema.index({ email: 1 }); // REMOVE - sudah unique: true
+// UserSchema.index({ referralCode: 1 }); // REMOVE - sudah unique: true
+UserSchema.index({ referredBy: 1 }); // Keep this - tidak ada unique: true
 
 export default mongoose.model<IUser>('User', UserSchema);

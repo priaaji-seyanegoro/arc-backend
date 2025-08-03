@@ -122,11 +122,11 @@ ProductSchema.methods.generateSKU = function(size: string, color: string, catego
 };
 
 // Indexes
-ProductSchema.index({ slug: 1 });
+// ProductSchema.index({ slug: 1 }); // REMOVE - sudah unique: true
 ProductSchema.index({ category: 1 });
 ProductSchema.index({ isActive: 1, isFeatured: -1 });
 ProductSchema.index({ tags: 1 });
-ProductSchema.index({ 'skus.sku': 1 });
+// ProductSchema.index({ 'skus.sku': 1 }); // REMOVE - SKU sudah unique: true
 ProductSchema.index({ totalStock: 1 });
 ProductSchema.index({ averageRating: -1 });
 ProductSchema.index({ createdAt: -1 });

@@ -6,7 +6,11 @@ import {
   getProfile,
   updateProfile,
   changePassword,
-  logout
+  logout,
+  sendVerificationEmailController,
+  verifyEmail,
+  requestPasswordReset,
+  resetPassword
 } from '../controllers/authController';
 import {
   registerValidation,
@@ -29,5 +33,13 @@ router.get('/profile', authenticate, getProfile);
 router.put('/profile', authenticate, updateProfileValidation, updateProfile);
 router.put('/change-password', authenticate, changePasswordValidation, changePassword);
 router.post('/logout', authenticate, logout);
+
+// Email verification routes
+router.post('/send-verification', authenticate, sendVerificationEmailController);
+router.get('/verify-email/:token', verifyEmail);
+
+// Password reset routes
+router.post('/request-password-reset', requestPasswordReset);
+router.post('/reset-password', resetPassword);
 
 export default router;
