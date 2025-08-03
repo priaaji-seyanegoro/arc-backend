@@ -17,13 +17,10 @@ import {
 // Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Handle validation errors
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      sendError(res, "Validation failed", undefined, 400, errors.array());
-      return;
-    }
-
+    // Tambah debugging
+    console.log('Raw request body:', req.body);
+    console.log('Email from request:', req.body.email);
+    
     const {
       firstName,
       lastName,
@@ -32,6 +29,16 @@ export const register = async (req: Request, res: Response): Promise<void> => {
       phone,
       referralCode,
     }: RegisterRequest = req.body;
+    
+    // Tambah debugging lagi
+    console.log('Email after destructuring:', email);
+    
+    // Handle validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      sendError(res, "Validation failed", undefined, 400, errors.array());
+      return;
+    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });

@@ -37,7 +37,9 @@ export const handleValidationErrors = (
 export const emailValidation = () => 
   body('email')
     .isEmail()
-    .normalizeEmail()
+    .normalizeEmail({
+      gmail_remove_dots: false  // Jangan hapus titik dari Gmail
+    })
     .withMessage('Please provide a valid email address');
 
 export const passwordValidation = (field: string = 'password') => 

@@ -1,3 +1,5 @@
+// ✅ IMPORT CONFIG FIRST! (HARUS DI BARIS PERTAMA)
+import '../config/env';
 import nodemailer from "nodemailer";
 import { generateVerificationToken } from "../utils/jwt";
 
@@ -6,14 +8,14 @@ console.log("EMAIL_HOST:", process.env.EMAIL_HOST);
 console.log("EMAIL_PORT:", process.env.EMAIL_PORT);
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 
-// Konfigurasi SMTP Hostinger yang benar
+// ✅ Sekarang gunakan environment variables (bukan hardcode!)
 const transporter = nodemailer.createTransport({
-  host: "smtp.hostinger.com", // ✅ Sesuai screenshot Hostinger
-  port: 465, // ✅ Port SSL dari screenshot
-  secure: true, // ✅ SSL/TLS aktif
+  host: process.env.EMAIL_HOST!, // ✅ Akan terbaca: smtp.hostinger.com
+  port: parseInt(process.env.EMAIL_PORT || "465"), // ✅ Akan terbaca: 465
+  secure: process.env.EMAIL_SECURE === "true", // ✅ Akan terbaca: true
   auth: {
-    user: "contact@action-rom.com",
-    pass: "q4qB!gw0o%",
+    user: process.env.EMAIL_USER!, // ✅ Akan terbaca: contact@action-rom.com
+    pass: process.env.EMAIL_PASS!, // ✅ Akan terbaca: q4qB!gw0o%
   },
 });
 
@@ -23,7 +25,7 @@ export const sendVerificationEmail = async (
   firstName: string
 ) => {
   const verificationToken = generateVerificationToken(userId);
-  const verificationUrl = `${process.env.FRONTEND_URL}/api/auth/verify-email?token=${verificationToken}`;
+  const verificationUrl = `${process.env.BACKEND_URL}/api/auth/verify-email/${verificationToken}`;
 
   const mailOptions = {
     from: process.env.EMAIL_FROM,
