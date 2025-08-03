@@ -76,7 +76,8 @@ const UserSchema = new Schema<IUser>({
   referralCode: { 
     type: String, 
     unique: true, 
-    required: true 
+    required: true,
+    default: () => `ARC${Date.now()}${Math.random().toString(36).substr(2, 4).toUpperCase()}`
   },
   referredBy: { type: String }
 }, {

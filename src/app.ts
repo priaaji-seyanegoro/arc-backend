@@ -6,10 +6,10 @@ import rateLimit from 'express-rate-limit';
 import { logger } from './utils/logger';
 import mongoose from 'mongoose';
 
-// Import routes (akan dibuat nanti)
-// import authRoutes from './routes/auth';
-// import productRoutes from './routes/products';
-// import orderRoutes from './routes/orders';
+// Import routes
+import authRoutes from './routes/authRoutes';
+import categoryRoutes from './routes/categoryRoutes';
+import productRoutes from './routes/productRoutes';
 
 const app: Application = express();
 
@@ -62,12 +62,12 @@ app.get('/health', (req: Request, res: Response) => {
   });
 });
 
-// API routes (akan ditambahkan nanti)
-// app.use('/api/auth', authRoutes);
-// app.use('/api/products', productRoutes);
-// app.use('/api/orders', orderRoutes);
+// API routes - AKTIFKAN INI!
+app.use('/api/auth', authRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/products', productRoutes);
 
-// 404 handler - RECOMMENDED
+// 404 handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({
     success: false,
