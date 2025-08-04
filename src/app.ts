@@ -1,38 +1,41 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import compression from 'compression';
-import rateLimit from 'express-rate-limit';
-import { logger } from './utils/logger';
-import mongoose from 'mongoose';
+import express, { Application, Request, Response, NextFunction } from "express";
+import cors from "cors";
+import helmet from "helmet";
+import compression from "compression";
+import rateLimit from "express-rate-limit";
+import { logger } from "./utils/logger";
+import mongoose from "mongoose";
 
 // Import routes
-import authRoutes from './routes/authRoutes';
-import categoryRoutes from './routes/categoryRoutes';
-import productRoutes from './routes/productRoutes';
-import collectionRoutes from './routes/collectionRoutes';
+import authRoutes from "./routes/authRoutes";
+import categoryRoutes from "./routes/categoryRoutes";
+import productRoutes from "./routes/productRoutes";
+import collectionRoutes from "./routes/collectionRoutes";
+import cartRoutes from "./routes/cartRoutes";
 
 const app: Application = express();
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3001',
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:3001",
+    credentials: true,
+  })
+);
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  message: "Too many requests from this IP, please try again later.",
 });
-app.use('/api', limiter); // Remove trailing slash
+app.use("/api", limiter); // Remove trailing slash
 
 // Body parsing middleware
 app.use(compression());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -41,49 +44,50 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
+app.get("/health", (req: Request, res: Response) => {
   const dbStatus = mongoose.connection.readyState;
   const dbStatusMap: Record<number, string> = {
-    0: 'disconnected',
-    1: 'connected',
-    2: 'connecting',
-    3: 'disconnecting'
+    0: "disconnected",
+    1: "connected",
+    2: "connecting",
+    3: "disconnecting",
   };
-  const dbStatusText = dbStatusMap[dbStatus] || 'unknown';
+  const dbStatusText = dbStatusMap[dbStatus] || "unknown";
 
   res.status(200).json({
-    status: 'OK',
-    message: 'Action Romance Comedy Backend is running!',
+    status: "OK",
+    message: "Action Romance Comedy Backend is running!",
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env.NODE_ENV || "development",
     database: {
       status: dbStatusText,
-      readyState: dbStatus
-    }
+      readyState: dbStatus,
+    },
   });
 });
 
 // API routes - AKTIFKAN INI!
-app.use('/api/auth', authRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/collections', collectionRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/categories", categoryRoutes);
+app.use("/api/products", productRoutes);
+app.use("/api/collections", collectionRoutes);
+app.use("/api/cart", cartRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: "Route not found",
   });
 });
 
 // Global error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  logger.error('Unhandled error:', err);
+  logger.error("Unhandled error:", err);
   res.status(500).json({
     success: false,
-    message: 'Internal server error',
-    ...(process.env.NODE_ENV === 'development' && { error: err.message })
+    message: "Internal server error",
+    ...(process.env.NODE_ENV === "development" && { error: err.message }),
   });
 });
 
