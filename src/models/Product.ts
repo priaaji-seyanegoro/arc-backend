@@ -20,6 +20,7 @@ export interface IProduct extends Document {
   description: string;
   shortDescription?: string;
   category: mongoose.Types.ObjectId;
+  productCollection?: mongoose.Types.ObjectId; // Ganti dari 'collection' ke 'productCollection'
   brand?: string;
   tags: string[];
   skus: ISKU[];
@@ -75,6 +76,11 @@ const ProductSchema = new Schema<IProduct>({
     ref: 'Category', 
     required: true 
   },
+  productCollection: { // Ganti dari 'collection' ke 'productCollection'
+    type: Schema.Types.ObjectId,
+    ref: 'Collection',
+    required: false
+  },
   brand: { type: String, trim: true },
   tags: [{ type: String, lowercase: true }],
   skus: [SKUSchema],
@@ -95,6 +101,9 @@ const ProductSchema = new Schema<IProduct>({
   timestamps: true
 });
 
+// Update indexes
+ProductSchema.index({ productCollection: 1 }); // Ganti dari 'collection' ke 'productCollection'
+ProductSchema.index({ productCollection: 1, isActive: 1 }); // Ganti dari 'collection' ke 'productCollection'
 // Generate slug before saving
 ProductSchema.pre('save', function(next) {
   if (this.isModified('name') && !this.slug) {

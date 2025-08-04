@@ -20,7 +20,12 @@ export const createCategoryValidation = [
     .optional()
     .trim()
     .isLength({ max: 50 })
-    .withMessage('Icon must not exceed 50 characters')
+    .withMessage('Icon must not exceed 50 characters'),
+    
+  body('sortOrder')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Sort order must be a non-negative integer')
 ];
 
 export const updateCategoryValidation = [
@@ -61,7 +66,12 @@ export const updateCategoryValidation = [
   body('isActive')
     .optional()
     .isBoolean()
-    .withMessage('isActive must be a boolean value')
+    .withMessage('isActive must be a boolean value'),
+    
+  body('sortOrder')
+    .optional()
+    .isInt({ min: 0 })
+    .withMessage('Sort order must be a non-negative integer')
 ];
 
 export const categoryIdValidation = [

@@ -7,8 +7,8 @@ import { sendSuccess, sendError } from '../utils/response';
 export const getCategories = async (req: Request, res: Response): Promise<void> => {
   try {
     const categories = await Category.find({ isActive: true })
-      .sort({ name: 1 })
-      .select('name description icon isActive');
+      .sort({ sortOrder: 1, name: 1 })
+      .select('name description icon isActive sortOrder');
     
     sendSuccess(res, 'Categories retrieved successfully', categories);
   } catch (error) {
@@ -42,13 +42,13 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
       return;
     }
     
-    // Di createCategory function
-    const { name, description, image } = req.body;
+    const { name, description, image, sortOrder } = req.body;
     
     const category = new Category({
       name,
       description,
-      image
+      image,
+      sortOrder: sortOrder || 0
     });
     
     await category.save();
@@ -69,7 +69,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     }
     
     const { id } = req.params;
-    const { name, description, image, isActive } = req.body;
+    const { name, description, image, isActive, sortOrder } = req.body;
     
     const category = await Category.findById(id);
     if (!category) {
@@ -94,6 +94,7 @@ export const updateCategory = async (req: Request, res: Response): Promise<void>
     if (description !== undefined) category.description = description;
     if (image !== undefined) category.image = image;
     if (isActive !== undefined) category.isActive = isActive;
+    if (sortOrder !== undefined) category.sortOrder = sortOrder;
     
     await category.save();
     
