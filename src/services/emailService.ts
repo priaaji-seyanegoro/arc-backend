@@ -1,5 +1,5 @@
 // ✅ IMPORT CONFIG FIRST! (HARUS DI BARIS PERTAMA)
-import '../config/env';
+import "../config/env";
 import nodemailer from "nodemailer";
 import { generateVerificationToken } from "../utils/jwt";
 
@@ -8,14 +8,13 @@ console.log("EMAIL_HOST:", process.env.EMAIL_HOST);
 console.log("EMAIL_PORT:", process.env.EMAIL_PORT);
 console.log("EMAIL_USER:", process.env.EMAIL_USER);
 
-// ✅ Sekarang gunakan environment variables (bukan hardcode!)
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST!, // ✅ Akan terbaca: smtp.hostinger.com
-  port: parseInt(process.env.EMAIL_PORT || "465"), // ✅ Akan terbaca: 465
-  secure: process.env.EMAIL_SECURE === "true", // ✅ Akan terbaca: true
+  host: process.env.EMAIL_HOST!,
+  port: parseInt(process.env.EMAIL_PORT || "465"),
+  secure: process.env.EMAIL_SECURE === "true",
   auth: {
-    user: process.env.EMAIL_USER!, // ✅ Akan terbaca: contact@action-rom.com
-    pass: process.env.EMAIL_PASS!, // ✅ Akan terbaca: q4qB!gw0o%
+    user: process.env.EMAIL_USER!,
+    pass: process.env.EMAIL_PASS!,
   },
 });
 
