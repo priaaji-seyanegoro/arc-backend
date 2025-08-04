@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface ICategory extends Document {
   _id: string;
@@ -13,33 +13,35 @@ export interface ICategory extends Document {
   updatedAt: Date;
 }
 
-const CategorySchema = new Schema<ICategory>({
-  name: { type: String, required: true, trim: true },
-  slug: { 
-    type: String, 
-    required: true, 
-    unique: true, 
-    lowercase: true 
+const CategorySchema = new Schema<ICategory>(
+  {
+    name: { type: String, required: true, trim: true },
+    slug: {
+      type: String,
+      unique: true,
+      lowercase: true,
+    },
+    description: { type: String, trim: true },
+    image: { type: String },
+    parentCategory: {
+      type: Schema.Types.ObjectId,
+      ref: "Category",
+    },
+    isActive: { type: Boolean, default: true },
+    sortOrder: { type: Number, default: 0 },
   },
-  description: { type: String, trim: true },
-  image: { type: String },
-  parentCategory: { 
-    type: Schema.Types.ObjectId, 
-    ref: 'Category' 
-  },
-  isActive: { type: Boolean, default: true },
-  sortOrder: { type: Number, default: 0 }
-}, {
-  timestamps: true
-});
+  {
+    timestamps: true,
+  }
+);
 
 // Generate slug before saving
-CategorySchema.pre('save', function(next) {
-  if (this.isModified('name') && !this.slug) {
+CategorySchema.pre("save", function (next) {
+  if ((this.isModified("name") || this.isNew) && !this.slug) {
     this.slug = this.name
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
   }
   next();
 });
@@ -49,4 +51,4 @@ CategorySchema.pre('save', function(next) {
 CategorySchema.index({ parentCategory: 1 });
 CategorySchema.index({ isActive: 1, sortOrder: 1 });
 
-export default mongoose.model<ICategory>('Category', CategorySchema);
+export default mongoose.model<ICategory>("Category", CategorySchema);
