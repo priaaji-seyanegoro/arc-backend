@@ -159,3 +159,6 @@ export const optionalAuth = async (
     next();
   }
 };
+
+// Admin authorization middleware
+export const requireAdmin = authorize('admin');

@@ -12,6 +12,7 @@ import categoryRoutes from "./routes/categoryRoutes";
 import productRoutes from "./routes/productRoutes";
 import collectionRoutes from "./routes/collectionRoutes";
 import cartRoutes from "./routes/cartRoutes";
+import orderRoutes from "./routes/orderRoutes";
 
 const app: Application = express();
 
@@ -66,12 +67,13 @@ app.get("/health", (req: Request, res: Response) => {
   });
 });
 
-// API routes - AKTIFKAN INI!
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/collections", collectionRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

@@ -88,7 +88,12 @@ const OrderSchema = new Schema<IOrder>({
   orderNumber: { 
     type: String, 
     required: true, 
-    unique: true 
+    unique: true,
+    default: function() {
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const random = Math.random().toString(36).substr(2, 5).toUpperCase();
+      return `ARC-${date}-${random}`;
+    }
   },
   user: { 
     type: Schema.Types.ObjectId, 
@@ -144,7 +149,7 @@ const OrderSchema = new Schema<IOrder>({
 
 // Generate order number before saving
 OrderSchema.pre('save', function(next) {
-  if (!this.orderNumber) {
+  if (this.isNew && !this.orderNumber) {
     const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const random = Math.random().toString(36).substr(2, 5).toUpperCase();
     this.orderNumber = `ARC-${date}-${random}`;
@@ -152,8 +157,8 @@ OrderSchema.pre('save', function(next) {
   next();
 });
 
-// Indexes
-OrderSchema.index({ orderNumber: 1 });
+// Indexes (hapus orderNumber karena sudah unique: true)
+// OrderSchema.index({ orderNumber: 1 }); // HAPUS BARIS INI
 OrderSchema.index({ user: 1 });
 OrderSchema.index({ status: 1 });
 OrderSchema.index({ paymentStatus: 1 });
