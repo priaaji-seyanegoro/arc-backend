@@ -48,12 +48,14 @@ ARC Backend is a comprehensive e-commerce backend system that provides complete 
 - **jest** - Testing framework
 - **winston** - Logging
 
+## 🚀 API Endpoints
+
 ### 🔐 Authentication Routes
 
 #### Register User
 
 ```http
-POST /auth/register
+POST /api/auth/register
 Content-Type: application/json
 
 {
@@ -69,7 +71,7 @@ Content-Type: application/json
 #### Login User
 
 ```http
-POST /auth/login
+POST /api/auth/login
 Content-Type: application/json
 
 {
@@ -81,13 +83,13 @@ Content-Type: application/json
 #### Verify Email
 
 ```http
-GET /auth/verify-email/:token
+GET /api/auth/verify-email/:token
 ```
 
 #### Request Password Reset
 
 ```http
-POST /auth/request-password-reset
+POST /api/auth/request-password-reset
 Content-Type: application/json
 
 {
@@ -98,7 +100,7 @@ Content-Type: application/json
 #### Reset Password
 
 ```http
-POST /auth/reset-password
+POST /api/auth/reset-password
 Content-Type: application/json
 
 {
@@ -111,7 +113,7 @@ Content-Type: application/json
 #### Refresh Token
 
 ```http
-POST /auth/refresh-token
+POST /api/auth/refresh-token
 Content-Type: application/json
 
 {
@@ -124,14 +126,14 @@ Content-Type: application/json
 #### Get User Profile
 
 ```http
-GET /auth/profile
+GET /api/auth/profile
 Authorization: Bearer <access_token>
 ```
 
 #### Update User Profile
 
 ```http
-PUT /auth/profile
+PUT /api/auth/profile
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -145,7 +147,7 @@ Content-Type: application/json
 #### Change Password
 
 ```http
-PUT /auth/change-password
+PUT /api/auth/change-password
 Authorization: Bearer <access_token>
 Content-Type: application/json
 
@@ -158,22 +160,250 @@ Content-Type: application/json
 #### Logout
 
 ```http
-POST /auth/logout
+POST /api/auth/logout
 Authorization: Bearer <access_token>
 ```
 
 #### Send Verification Email
 
 ```http
-POST /auth/send-verification
+POST /api/auth/send-verification
 Authorization: Bearer <access_token>
+```
+
+### 🛍️ Product Routes
+
+#### Get All Products
+
+```http
+GET /api/products
+GET /api/products?page=1&limit=10&category=tops&minPrice=100000&maxPrice=500000&search=shirt
+```
+
+#### Get Product by Slug
+
+```http
+GET /api/products/:slug
+```
+
+#### Create Product (Admin)
+
+```http
+POST /api/products
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "name": "Oversized Cotton T-Shirt",
+  "description": "Comfortable oversized cotton t-shirt",
+  "category": "category_id",
+  "basePrice": 299000,
+  "images": ["image1.jpg", "image2.jpg"],
+  "skus": [
+    {
+      "sku": "ARC-TOP-S-WHT-001",
+      "size": "S",
+      "color": "White",
+      "price": 299000,
+      "stock": 50,
+      "weight": 190
+    }
+  ]
+}
+```
+
+#### Update Product (Admin)
+
+```http
+PUT /api/products/:id
+Authorization: Bearer <admin_token>
+```
+
+#### Delete Product (Admin)
+
+```http
+DELETE /api/products/:id
+Authorization: Bearer <admin_token>
+```
+
+### 📂 Category Routes
+
+#### Get All Categories
+
+```http
+GET /api/categories
+```
+
+#### Get Category by Slug
+
+```http
+GET /api/categories/:slug
+```
+
+#### Create Category (Admin)
+
+```http
+POST /api/categories
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "name": "Tops",
+  "description": "T-shirts, shirts, and tops",
+  "image": "tops-category.jpg"
+}
+```
+
+### 🛒 Cart Routes
+
+#### Get User Cart
+
+```http
+GET /api/cart
+Authorization: Bearer <access_token>
+```
+
+#### Add Item to Cart
+
+```http
+POST /api/cart/add
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "productId": "product_id",
+  "sku": "ARC-TOP-S-WHT-001",
+  "quantity": 2
+}
+```
+
+#### Update Cart Item
+
+```http
+PUT /api/cart/item/:itemId
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "quantity": 3
+}
+```
+
+#### Remove Item from Cart
+
+```http
+DELETE /api/cart/item/:itemId
+Authorization: Bearer <access_token>
+```
+
+#### Clear Cart
+
+```http
+DELETE /api/cart/clear
+Authorization: Bearer <access_token>
+```
+
+### 📦 Order Routes
+
+#### Checkout (Create Order)
+
+```http
+POST /api/orders/checkout
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "shippingAddress": {
+    "recipientName": "John Doe",
+    "phone": "+6281234567890",
+    "street": "Jl. Sudirman No. 123",
+    "city": "Jakarta",
+    "state": "DKI Jakarta",
+    "postalCode": "12345",
+    "country": "Indonesia"
+  },
+  "shippingMethod": "standard",
+  "paymentMethod": "bank_transfer",
+  "notes": "Please handle with care"
+}
+```
+
+#### Get User Orders
+
+```http
+GET /api/orders/my-orders
+GET /api/orders/my-orders?status=pending&page=1&limit=10
+Authorization: Bearer <access_token>
+```
+
+#### Get Order by ID
+
+```http
+GET /api/orders/:orderId
+Authorization: Bearer <access_token>
+```
+
+#### Cancel Order
+
+```http
+PATCH /api/orders/:orderId/cancel
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "cancelReason": "Changed my mind"
+}
+```
+
+### 👨‍💼 Admin Order Routes
+
+#### Get All Orders (Admin)
+
+```http
+GET /api/orders
+GET /api/orders?status=pending&paymentStatus=paid&search=John
+Authorization: Bearer <admin_token>
+```
+
+#### Update Order Status (Admin)
+
+```http
+PATCH /api/orders/:orderId/status
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "status": "shipped",
+  "trackingNumber": "JNE123456789"
+}
+```
+
+#### Update Payment Status (Admin)
+
+```http
+PATCH /api/orders/:orderId/payment
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "paymentStatus": "paid",
+  "paymentId": "midtrans_transaction_id"
+}
+```
+
+#### Get Order Statistics (Admin)
+
+```http
+GET /api/orders/admin/stats
+Authorization: Bearer <admin_token>
 ```
 
 ## 🧪 Testing with cURL
 
-### Register Example
+### Authentication Examples
 
 ```bash
+# Register
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
@@ -183,11 +413,8 @@ curl -X POST http://localhost:3000/api/auth/register \
     "password": "password123!",
     "confirmPassword": "password123!"
   }'
-```
 
-### Login Example
-
-```bash
+# Login
 curl -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
@@ -196,17 +423,82 @@ curl -X POST http://localhost:3000/api/auth/login \
   }'
 ```
 
-### Reset Password Example
+### Cart Examples
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/reset-password \
+# Add to cart
+curl -X POST http://localhost:3000/api/cart/add \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
-    "token": "your_reset_token",
-    "newPassword": "newPassword123!",
-    "confirmPassword": "newPassword123!"
+    "productId": "689075e47bb05ac66160a8ca",
+    "sku": "ARC-TOP-S-WHT-001",
+    "quantity": 2
   }'
+
+# Get cart
+curl -X GET http://localhost:3000/api/cart \
+  -H "Authorization: Bearer YOUR_TOKEN"
 ```
+
+### Order Examples
+
+```bash
+# Checkout
+curl -X POST http://localhost:3000/api/orders/checkout \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{
+    "shippingAddress": {
+      "recipientName": "John Doe",
+      "phone": "+6281234567890",
+      "street": "Jl. Sudirman No. 123",
+      "city": "Jakarta",
+      "state": "DKI Jakarta",
+      "postalCode": "12345",
+      "country": "Indonesia"
+    },
+    "shippingMethod": "standard",
+    "paymentMethod": "bank_transfer"
+  }'
+
+# Get orders with filter
+curl -X GET "http://localhost:3000/api/orders/my-orders?status=pending" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Cancel order
+curl -X PATCH http://localhost:3000/api/orders/ORDER_ID/cancel \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"cancelReason": "Changed my mind"}'
+```
+
+## 📊 Available Status Values
+
+### Order Status
+- `pending` - Pesanan baru
+- `confirmed` - Pesanan dikonfirmasi
+- `processing` - Sedang diproses
+- `shipped` - Sudah dikirim
+- `delivered` - Sudah diterima
+- `cancelled` - Dibatalkan
+- `returned` - Dikembalikan
+
+### Payment Status
+- `pending` - Menunggu pembayaran
+- `paid` - Sudah dibayar
+- `failed` - Pembayaran gagal
+- `refunded` - Sudah direfund
+
+### Shipping Methods
+- `regular` - Reguler (15k base cost)
+- `express` - Express (25k base cost)
+- `same_day` - Same Day (50k base cost)
+
+### Payment Methods
+- `midtrans` - Midtrans payment gateway
+- `bank_transfer` - Bank transfer
+- `cod` - Cash on delivery
 
 ## ⚙️ Environment Variables
 
@@ -245,8 +537,9 @@ FRONTEND_URL=http://localhost:3000
 4. Start the server: `yarn run dev`
 5. Server will run on `http://localhost:3000`
 
-## ✅ Tested Endpoints
+## ✅ Tested & Working Features
 
+### Authentication System
 - ✅ User Registration
 - ✅ User Login
 - ✅ Email Verification
@@ -255,3 +548,86 @@ FRONTEND_URL=http://localhost:3000
 - ✅ Token Refresh
 - ✅ User Profile Management
 - ✅ Password Change
+- ✅ Logout
+
+### Product Management
+- ✅ Product CRUD Operations
+- ✅ Product Search & Filtering
+- ✅ Category Management
+- ✅ SKU Management
+- ✅ Stock Management
+- ✅ Image Handling
+
+### Shopping Cart
+- ✅ Add Items to Cart
+- ✅ Update Cart Items
+- ✅ Remove Items from Cart
+- ✅ Clear Cart
+- ✅ Cart Validation
+- ✅ Stock Checking
+- ✅ Price Calculation
+
+### Order Management
+- ✅ Checkout Process
+- ✅ Order Creation
+- ✅ Order History
+- ✅ Order Filtering by Status
+- ✅ Order Cancellation
+- ✅ Stock Management
+- ✅ Shipping Cost Calculation
+- ✅ Admin Order Management
+- ✅ Order Status Updates
+- ✅ Payment Status Updates
+- ✅ Order Statistics
+
+### Security & Validation
+- ✅ JWT Authentication
+- ✅ Role-based Authorization
+- ✅ Input Validation
+- ✅ Error Handling
+- ✅ Rate Limiting
+- ✅ CORS Configuration
+
+## 🎯 Next Development Steps
+
+1. **Payment Integration**
+   - Midtrans payment gateway
+   - Payment webhooks
+   - Payment verification
+
+2. **File Upload System**
+   - Image upload for products
+   - Image optimization
+   - File management
+
+3. **Notification System**
+   - Email notifications
+   - Order status updates
+   - Welcome emails
+
+4. **Advanced Features**
+   - Discount & coupon system
+   - User address management
+   - Product reviews & ratings
+   - Wishlist functionality
+
+5. **Analytics & Reporting**
+   - Sales reports
+   - User analytics
+   - Product performance
+
+## 📝 API Documentation
+
+For detailed API documentation with request/response examples, please refer to the Postman collection or contact the development team.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License.
