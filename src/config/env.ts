@@ -15,6 +15,17 @@ const requiredEnvVars = [
   'MIDTRANS_CLIENT_KEY'
 ];
 
+// Optional environment variables for shipping and geocoding services
+const optionalEnvVars = [
+  'RAJAONGKIR_API_KEY',
+  'GOOGLE_MAPS_API_KEY',
+  'OPENCAGE_API_KEY',
+  'GOJEK_API_KEY',
+  'GRAB_API_KEY',
+  'DHL_API_KEY',
+  'FEDEX_API_KEY'
+];
+
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
     throw new Error(`Missing required environment variable: ${envVar}`);
@@ -74,5 +85,22 @@ export const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
 // File upload configuration
 export const MAX_FILE_SIZE = parseInt(process.env.MAX_FILE_SIZE || '5242880'); // 5MB
 export const ALLOWED_FILE_TYPES = process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/webp';
+
+// Shipping and Geocoding API configuration
+export const RAJAONGKIR_API_KEY = process.env.RAJAONGKIR_API_KEY || '';
+export const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || '';
+export const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY || '';
+export const GOJEK_API_KEY = process.env.GOJEK_API_KEY || '';
+export const GRAB_API_KEY = process.env.GRAB_API_KEY || '';
+export const DHL_API_KEY = process.env.DHL_API_KEY || '';
+export const FEDEX_API_KEY = process.env.FEDEX_API_KEY || '';
+
+// Shipping configuration
+export const DEFAULT_ORIGIN_CITY = process.env.DEFAULT_ORIGIN_CITY || 'Jakarta';
+export const DEFAULT_ORIGIN_PROVINCE = process.env.DEFAULT_ORIGIN_PROVINCE || 'DKI Jakarta';
+export const DEFAULT_ORIGIN_COORDINATES = {
+  latitude: parseFloat(process.env.DEFAULT_ORIGIN_LATITUDE || '-6.2088'),
+  longitude: parseFloat(process.env.DEFAULT_ORIGIN_LONGITUDE || '106.8456')
+};
 
 export {}; // Make this a module

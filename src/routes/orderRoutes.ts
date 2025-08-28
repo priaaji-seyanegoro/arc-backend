@@ -7,7 +7,10 @@ import {
   getAllOrders,
   updateOrderStatus,
   updatePaymentStatus,
-  getOrderStats
+  getOrderStats,
+  getShippingOptions,
+  validateAddress,
+  getDeliveryInfo
 } from '../controllers/orderController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 import { orderLimiter } from '../middleware/rateLimiter';
@@ -17,6 +20,11 @@ const router = Router();
 
 // User routes (require authentication)
 router.use(authenticate);
+
+// Shipping and delivery routes
+router.post('/shipping-options', cache(cacheConfigs.short), getShippingOptions);
+router.post('/validate-address', cache(cacheConfigs.short), validateAddress);
+router.post('/delivery-info', cache(cacheConfigs.short), getDeliveryInfo);
 
 // User order operations
 router.post('/checkout', orderLimiter, invalidateCache((req) => [`cache:*:*/orders/my-orders*`, `cache:*:*/orders*`]), checkout);

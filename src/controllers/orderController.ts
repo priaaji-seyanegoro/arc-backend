@@ -6,6 +6,8 @@ import User from '../models/User';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../types/api';
 import { NotificationService } from '../services/notificationService';
+import { ShippingService } from '../services/shippingService';
+import { GeocodingService } from '../services/geocodingService';
 
 // Checkout - Convert cart to order
 export const checkout = async (req: Request, res: Response): Promise<void> => {
@@ -80,8 +82,40 @@ export const checkout = async (req: Request, res: Response): Promise<void> => {
       subtotal += sku.price * cartItem.quantity;
     }
 
-    // Calculate shipping and total
-    const shippingCost = calculateShippingCost(shippingMethod, orderItems);
+    // Validate and geocode shipping address
+    const geocodeResult = await GeocodingService.validateAddress(shippingAddress);
+    let validatedShippingAddress = shippingAddress;
+    if (geocodeResult) {
+      validatedShippingAddress = {
+        ...shippingAddress,
+        latitude: geocodeResult.coordinates.latitude,
+        longitude: geocodeResult.coordinates.longitude,
+        formattedAddress: geocodeResult.address.formattedAddress
+      };
+    }
+
+    // Calculate total weight for shipping
+    const totalWeight = orderItems.reduce((total, item) => total + (item.weight * item.quantity), 0);
+    
+    // Get shipping options and calculate cost
+    let shippingCost = 0;
+    let selectedShippingOption = null;
+    
+    if (shippingMethod && shippingMethod.includes(':')) {
+      // Format: "COURIER:SERVICE" (e.g., "JNE:REG")
+      const [courier, service] = shippingMethod.split(':');
+      selectedShippingOption = await ShippingService.getShippingOption(
+        courier,
+        service,
+        validatedShippingAddress,
+        totalWeight
+      );
+      shippingCost = selectedShippingOption?.cost || calculateShippingCost(shippingMethod, orderItems);
+    } else {
+      // Fallback to old calculation method
+      shippingCost = calculateShippingCost(shippingMethod, orderItems);
+    }
+
     const taxAmount = 0; // Implement tax calculation if needed
     const discountAmount = 0; // Implement discount logic if needed
     const totalAmount = subtotal + shippingCost + taxAmount - discountAmount;
@@ -144,6 +178,210 @@ export const checkout = async (req: Request, res: Response): Promise<void> => {
     const response: ApiResponse = {
       success: false,
       message: 'Failed to create order'
+    };
+    res.status(500).json(response);
+  }
+};
+
+// Get shipping options for an address
+export const getShippingOptions = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { address, weight } = req.body;
+
+    if (!address || !weight) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'Address and weight are required'
+      };
+      res.status(400).json(response);
+      return;
+    }
+
+    // Validate and geocode address
+    const geocodeResult = await GeocodingService.validateAddress(address);
+    if (!geocodeResult) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'Invalid address or geocoding failed'
+      };
+      res.status(400).json(response);
+      return;
+    }
+
+    // Convert to ShippingAddress format
+    const shippingAddress = {
+      street: geocodeResult.address.street || '',
+      city: geocodeResult.address.city || '',
+      state: geocodeResult.address.state || '',
+      postalCode: geocodeResult.address.postalCode || '',
+      country: geocodeResult.address.country || '',
+      latitude: geocodeResult.coordinates.latitude,
+      longitude: geocodeResult.coordinates.longitude
+    };
+
+    // Get shipping options
+    const shippingOptions = await ShippingService.calculateShippingCosts(
+      shippingAddress,
+      weight
+    );
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Shipping options retrieved successfully',
+      data: {
+        address: geocodeResult.address,
+        coordinates: geocodeResult.coordinates,
+        mapUrl: GeocodingService.getMapUrl(
+          geocodeResult.coordinates.latitude,
+          geocodeResult.coordinates.longitude
+        ),
+        mapEmbedUrl: GeocodingService.getMapEmbedUrl(
+          geocodeResult.coordinates.latitude,
+          geocodeResult.coordinates.longitude
+        ),
+        shippingOptions
+      }
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    logger.error('Get shipping options error:', error);
+    const response: ApiResponse = {
+      success: false,
+      message: 'Failed to get shipping options'
+    };
+    res.status(500).json(response);
+  }
+};
+
+// Validate address and get coordinates
+export const validateAddress = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { address } = req.body;
+
+    if (!address) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'Address is required'
+      };
+      res.status(400).json(response);
+      return;
+    }
+
+    // Validate and geocode address
+    const geocodeResult = await GeocodingService.validateAddress(address);
+    if (!geocodeResult) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'Invalid address or geocoding failed'
+      };
+      res.status(400).json(response);
+      return;
+    }
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Address validated successfully',
+      data: {
+        originalAddress: address,
+        validatedAddress: geocodeResult.address,
+        coordinates: geocodeResult.coordinates,
+        accuracy: geocodeResult.accuracy,
+        mapUrl: GeocodingService.getMapUrl(
+          geocodeResult.coordinates.latitude,
+          geocodeResult.coordinates.longitude
+        ),
+        mapEmbedUrl: GeocodingService.getMapEmbedUrl(
+          geocodeResult.coordinates.latitude,
+          geocodeResult.coordinates.longitude
+        )
+      }
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    logger.error('Validate address error:', error);
+    const response: ApiResponse = {
+      success: false,
+      message: 'Failed to validate address'
+    };
+    res.status(500).json(response);
+  }
+};
+
+// Get delivery zones and distance calculation
+export const getDeliveryInfo = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { destinationAddress } = req.body;
+    
+    if (!destinationAddress) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'Destination address is required'
+      };
+      res.status(400).json(response);
+      return;
+    }
+
+    // Default origin (your warehouse/store location)
+    const originCoords = {
+      latitude: -6.2088, // Jakarta coordinates
+      longitude: 106.8456
+    };
+
+    // Geocode destination
+    const destGeocode = await GeocodingService.validateAddress(destinationAddress);
+    if (!destGeocode) {
+      const response: ApiResponse = {
+        success: false,
+        message: 'Invalid destination address'
+      };
+      res.status(400).json(response);
+      return;
+    }
+
+    // Calculate distance and delivery zone
+    const distance = GeocodingService.calculateDistance(
+      originCoords.latitude,
+      originCoords.longitude,
+      destGeocode.coordinates.latitude,
+      destGeocode.coordinates.longitude
+    );
+
+    const deliveryZone = GeocodingService.getDeliveryZone(
+      originCoords.latitude,
+      originCoords.longitude,
+      destGeocode.coordinates.latitude,
+      destGeocode.coordinates.longitude
+    );
+
+    const response: ApiResponse = {
+      success: true,
+      message: 'Delivery information calculated successfully',
+      data: {
+        origin: {
+          coordinates: originCoords,
+          address: 'Jakarta, Indonesia' // Your store location
+        },
+        destination: {
+          coordinates: destGeocode.coordinates,
+          address: destGeocode.address
+        },
+        distance: Math.round(distance * 100) / 100, // Round to 2 decimal places
+        deliveryZone,
+        mapUrl: GeocodingService.getMapUrl(
+          destGeocode.coordinates.latitude,
+          destGeocode.coordinates.longitude
+        )
+      }
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    logger.error('Get delivery info error:', error);
+    const response: ApiResponse = {
+      success: false,
+      message: 'Failed to get delivery information'
     };
     res.status(500).json(response);
   }
