@@ -6,17 +6,18 @@ import {
   updateCollection,
   deleteCollection
 } from '../controllers/collectionController';
-import { authenticate } from '../middleware/auth'; // Ganti authenticateToken dengan authenticate
+import { authenticate } from '../middleware/auth';
+import { cache, invalidateCache, cacheConfigs, createInvalidationPatterns } from '../middleware/cache';
 
 const router = express.Router();
 
-// Public routes
-router.get('/', getCollections);
-router.get('/:id', getCollectionById);
+// Public routes (with caching)
+router.get('/', cache(cacheConfigs.medium), getCollections);
+router.get('/:id', cache(cacheConfigs.long), getCollectionById);
 
-// Protected routes (admin only)
-router.post('/', authenticate, createCollection); // Ganti authenticateToken dengan authenticate
-router.put('/:id', authenticate, updateCollection); // Ganti authenticateToken dengan authenticate
-router.delete('/:id', authenticate, deleteCollection); // Ganti authenticateToken dengan authenticate
+// Protected routes (admin only) with cache invalidation
+router.post('/', authenticate, invalidateCache(createInvalidationPatterns.resource('collections')), createCollection);
+router.put('/:id', authenticate, invalidateCache((req) => [`cache:*:*/collections*`, `cache:*:*/collections/${req.params.id}*`]), updateCollection);
+router.delete('/:id', authenticate, invalidateCache((req) => [`cache:*:*/collections*`, `cache:*:*/collections/${req.params.id}*`]), deleteCollection);
 
 export default router;

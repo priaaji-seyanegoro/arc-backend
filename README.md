@@ -510,6 +510,16 @@ NODE_ENV=development
 # Database
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
 
+# Database Connection Optimization
+DB_SERVER_SELECTION_TIMEOUT=5000
+DB_SOCKET_TIMEOUT=45000
+DB_CONNECT_TIMEOUT=10000
+DB_MAX_POOL_SIZE=10
+DB_MIN_POOL_SIZE=5
+DB_MAX_IDLE_TIME=30000
+DB_HEARTBEAT_FREQUENCY=10000
+DB_RETRY_ATTEMPTS=5
+
 # JWT
 JWT_SECRET=your-super-secret-jwt-key
 JWT_REFRESH_SECRET=your-refresh-secret-key
@@ -528,6 +538,80 @@ EMAIL_FROM=your-email@domain.com
 BACKEND_URL=http://localhost:3000
 FRONTEND_URL=http://localhost:3000
 ```
+
+## 🔧 Database Connection Optimization
+
+### Masalah Koneksi Database
+
+Jika Anda mengalami error seperti:
+```
+MongooseError: Operation `users.findOne()` buffering timed out after 10000ms
+```
+
+### Solusi yang Telah Diimplementasikan
+
+1. **Connection Pooling Optimization**
+   - `maxPoolSize`: Maksimum 10 koneksi simultan
+   - `minPoolSize`: Minimum 5 koneksi yang selalu tersedia
+   - `maxIdleTimeMS`: Tutup koneksi idle setelah 30 detik
+
+2. **Timeout Configuration**
+   - `serverSelectionTimeoutMS`: 5 detik untuk memilih server
+   - `socketTimeoutMS`: 45 detik untuk operasi socket
+   - `connectTimeoutMS`: 10 detik untuk koneksi awal
+
+3. **Retry Logic**
+   - Automatic retry dengan exponential backoff
+   - Maksimum 5 percobaan koneksi
+   - Delay yang meningkat: 1s, 2s, 4s, 8s, 10s
+
+4. **Connection Monitoring**
+   - Real-time monitoring koneksi database
+   - Automatic reconnection saat koneksi terputus
+   - Graceful shutdown handling
+
+5. **Buffer Management**
+   - Disabled mongoose buffering untuk menghindari timeout
+   - Immediate error response saat koneksi bermasalah
+
+### Konfigurasi Database Variables
+
+| Variable | Default | Deskripsi |
+|----------|---------|----------|
+| `DB_SERVER_SELECTION_TIMEOUT` | 5000 | Timeout untuk memilih server MongoDB (ms) |
+| `DB_SOCKET_TIMEOUT` | 45000 | Timeout untuk operasi socket (ms) |
+| `DB_CONNECT_TIMEOUT` | 10000 | Timeout untuk koneksi awal (ms) |
+| `DB_MAX_POOL_SIZE` | 10 | Maksimum koneksi dalam pool |
+| `DB_MIN_POOL_SIZE` | 5 | Minimum koneksi dalam pool |
+| `DB_MAX_IDLE_TIME` | 30000 | Waktu idle maksimum sebelum koneksi ditutup (ms) |
+| `DB_HEARTBEAT_FREQUENCY` | 10000 | Frekuensi heartbeat untuk monitoring (ms) |
+| `DB_RETRY_ATTEMPTS` | 5 | Jumlah percobaan retry koneksi |
+
+### Troubleshooting
+
+1. **Jika masih mengalami timeout:**
+   - Periksa koneksi internet
+   - Pastikan MongoDB Atlas cluster aktif
+   - Verifikasi IP address sudah di-whitelist
+   - Cek kredensial database
+
+2. **Untuk development lokal:**
+   ```env
+   MONGODB_URI=mongodb://localhost:27017/arc-backend
+   ```
+
+3. **Untuk production:**
+   - Gunakan connection string dengan SSL
+   - Set `DB_MAX_POOL_SIZE` sesuai kapasitas server
+   - Monitor connection metrics
+
+### Monitoring Koneksi
+
+Server akan menampilkan log berikut:
+- ✅ `MongoDB connected successfully` - Koneksi berhasil
+- ⚠️ `MongoDB disconnected. Attempting to reconnect...` - Koneksi terputus
+- ❌ `MongoDB connection error` - Error koneksi
+- 🔄 `Retrying MongoDB connection in Xms...` - Sedang retry
 
 ## 🚀 Getting Started
 

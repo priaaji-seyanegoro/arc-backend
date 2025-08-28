@@ -4,6 +4,7 @@ import Product from "../models/Product";
 import Category from "../models/Category";
 import Collection from "../models/Collection";
 import { sendSuccess, sendError } from "../utils/response";
+import { FileService } from "../services/fileService";
 
 // Get all products with filtering and pagination
 export const getProducts = async (
@@ -532,6 +533,226 @@ export const deleteProductSKU = async (
     sendError(
       res,
       "Failed to delete SKU",
+      error instanceof Error ? error.message : "Unknown error",
+      500
+    );
+  }
+};
+
+// Add images to product
+export const addProductImages = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { images } = req.body;
+
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      sendError(res, "No images provided", undefined, 400);
+      return;
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      sendError(res, "Product not found", undefined, 404);
+      return;
+    }
+
+    // Add new images to existing ones
+    product.images = [...product.images, ...images];
+    await product.save();
+    await product.populate("category", "name slug");
+
+    sendSuccess(res, "Images added successfully", product);
+  } catch (error) {
+    sendError(
+      res,
+      "Failed to add images",
+      error instanceof Error ? error.message : "Unknown error",
+      500
+    );
+  }
+};
+
+// Remove image from product
+export const removeProductImage = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      sendError(res, "Image URL is required", undefined, 400);
+      return;
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      sendError(res, "Product not found", undefined, 404);
+      return;
+    }
+
+    // Remove image from product
+    product.images = product.images.filter(img => img !== imageUrl);
+    await product.save();
+
+    // Extract filename from URL and delete from storage
+    try {
+      const filename = imageUrl.split('/').pop();
+      if (filename) {
+        await FileService.deleteFile('PRODUCTS', filename);
+        // Also try to delete thumbnail
+        const thumbnailFilename = `thumb_${filename}`;
+        await FileService.deleteFile('PRODUCTS', thumbnailFilename).catch(() => {});
+      }
+    } catch (deleteError) {
+      // Log error but don't fail the request
+      console.error('Failed to delete file from storage:', deleteError);
+    }
+
+    await product.populate("category", "name slug");
+    sendSuccess(res, "Image removed successfully", product);
+  } catch (error) {
+    sendError(
+      res,
+      "Failed to remove image",
+      error instanceof Error ? error.message : "Unknown error",
+      500
+    );
+  }
+};
+
+// Update product image order
+export const updateProductImageOrder = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { images } = req.body;
+
+    if (!images || !Array.isArray(images)) {
+      sendError(res, "Images array is required", undefined, 400);
+      return;
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      sendError(res, "Product not found", undefined, 404);
+      return;
+    }
+
+    // Update image order
+    product.images = images;
+    await product.save();
+    await product.populate("category", "name slug");
+
+    sendSuccess(res, "Image order updated successfully", product);
+  } catch (error) {
+    sendError(
+      res,
+      "Failed to update image order",
+      error instanceof Error ? error.message : "Unknown error",
+      500
+    );
+  }
+};
+
+// Add images to SKU
+export const addSKUImages = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id, skuId } = req.params;
+    const { images } = req.body;
+
+    if (!images || !Array.isArray(images) || images.length === 0) {
+      sendError(res, "No images provided", undefined, 400);
+      return;
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      sendError(res, "Product not found", undefined, 404);
+      return;
+    }
+
+    const skuIndex = product.skus.findIndex((s) => s._id?.toString() === skuId);
+    if (skuIndex === -1) {
+      sendError(res, "SKU not found", undefined, 404);
+      return;
+    }
+
+    // Add new images to existing SKU images
+    product.skus[skuIndex].images = [...product.skus[skuIndex].images, ...images];
+    await product.save();
+    await product.populate("category", "name slug");
+
+    sendSuccess(res, "SKU images added successfully", product);
+  } catch (error) {
+    sendError(
+      res,
+      "Failed to add SKU images",
+      error instanceof Error ? error.message : "Unknown error",
+      500
+    );
+  }
+};
+
+// Remove image from SKU
+export const removeSKUImage = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id, skuId } = req.params;
+    const { imageUrl } = req.body;
+
+    if (!imageUrl) {
+      sendError(res, "Image URL is required", undefined, 400);
+      return;
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      sendError(res, "Product not found", undefined, 404);
+      return;
+    }
+
+    const skuIndex = product.skus.findIndex((s) => s._id?.toString() === skuId);
+    if (skuIndex === -1) {
+      sendError(res, "SKU not found", undefined, 404);
+      return;
+    }
+
+    // Remove image from SKU
+    product.skus[skuIndex].images = product.skus[skuIndex].images.filter(img => img !== imageUrl);
+    await product.save();
+
+    // Extract filename from URL and delete from storage
+    try {
+      const filename = imageUrl.split('/').pop();
+      if (filename) {
+        await FileService.deleteFile('PRODUCTS', filename);
+        // Also try to delete thumbnail
+        const thumbnailFilename = `thumb_${filename}`;
+        await FileService.deleteFile('PRODUCTS', thumbnailFilename).catch(() => {});
+      }
+    } catch (deleteError) {
+      // Log error but don't fail the request
+      console.error('Failed to delete file from storage:', deleteError);
+    }
+
+    await product.populate("category", "name slug");
+    sendSuccess(res, "SKU image removed successfully", product);
+  } catch (error) {
+    sendError(
+      res,
+      "Failed to remove SKU image",
       error instanceof Error ? error.message : "Unknown error",
       500
     );

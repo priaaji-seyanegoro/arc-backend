@@ -44,8 +44,9 @@ export interface IOrder extends Document {
   
   // Payment
   paymentMethod: 'midtrans' | 'bank_transfer' | 'cod';
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded' | 'cancelled';
   paymentId?: string; // Midtrans transaction ID
+  paymentToken?: string; // Midtrans payment token
   paidAt?: Date;
   
   // Order Status
@@ -123,10 +124,11 @@ const OrderSchema = new Schema<IOrder>({
   },
   paymentStatus: { 
     type: String, 
-    enum: ['pending', 'paid', 'failed', 'refunded'], 
+    enum: ['pending', 'paid', 'failed', 'refunded', 'cancelled'], 
     default: 'pending' 
   },
   paymentId: { type: String },
+  paymentToken: { type: String },
   paidAt: { type: Date },
   
   // Order Status

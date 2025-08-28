@@ -13,6 +13,12 @@ import {
   verifyPasswordResetToken,
   generatePasswordResetToken,
 } from "../utils/jwt";
+import {
+  createEmailVerificationToken,
+  sendVerificationEmail as sendNewVerificationEmail,
+  verifyEmailToken,
+  resendVerificationEmail,
+} from "../utils/emailVerification";
 
 // Register new user
 export const register = async (req: Request, res: Response): Promise<void> => {
@@ -71,11 +77,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 
     // Auto send verification email
     try {
-      await sendVerificationEmail(
-        user.email,
-        user._id.toString(),
-        user.firstName
-      );
+      const verificationToken = await createEmailVerificationToken(user._id);
+      await sendNewVerificationEmail(user, verificationToken);
       console.log(`Verification email sent to ${user.email}`);
     } catch (emailError) {
       console.error("Failed to send verification email:", emailError);
@@ -339,11 +342,8 @@ export const sendVerificationEmailController = async (
       return;
     }
 
-    await sendVerificationEmail(
-      user.email,
-      user._id.toString(),
-      user.firstName
-    );
+    const verificationToken = await createEmailVerificationToken(user._id);
+    await sendNewVerificationEmail(user, verificationToken);
 
     sendSuccess(res, "Verification email sent successfully");
   } catch (error) {
@@ -365,26 +365,52 @@ export const verifyEmail = async (
       return;
     }
 
-    const decoded = verifyVerificationToken(token);
+    const result = await verifyEmailToken(token);
 
-    const user = await User.findById(decoded.userId);
-    if (!user) {
-      sendError(res, "User not found", undefined, 404);
+    if (!result.success) {
+      sendError(res, result.message, undefined, 400);
       return;
     }
 
-    if (user.isEmailVerified) {
-      sendError(res, "Email already verified", undefined, 400);
-      return;
-    }
-
-    user.isEmailVerified = true;
-    await user.save();
-
-    sendSuccess(res, "Email verified successfully");
+    sendSuccess(res, result.message, {
+      user: {
+        id: result.user!._id,
+        firstName: result.user!.firstName,
+        lastName: result.user!.lastName,
+        email: result.user!.email,
+        isEmailVerified: result.user!.isEmailVerified,
+      },
+    });
   } catch (error) {
     console.error("Verify email error:", error);
     sendError(res, "Invalid or expired verification token", undefined, 400);
+  }
+};
+
+// Resend verification email
+export const resendVerificationEmailController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      sendError(res, "Email is required", undefined, 400);
+      return;
+    }
+
+    const result = await resendVerificationEmail(email);
+
+    if (!result.success) {
+      sendError(res, result.message, undefined, 400);
+      return;
+    }
+
+    sendSuccess(res, result.message);
+  } catch (error) {
+    console.error("Resend verification email error:", error);
+    sendError(res, "Failed to resend verification email", undefined, 500);
   }
 };
 

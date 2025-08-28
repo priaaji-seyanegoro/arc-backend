@@ -12,6 +12,8 @@ export interface IUser extends Document {
   gender?: 'male' | 'female' | 'other';
   role: 'customer' | 'admin' | 'super_admin';
   isEmailVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
   isActive: boolean;
   avatar?: string;
   addresses: IAddress[];
@@ -70,6 +72,8 @@ const UserSchema = new Schema<IUser>({
     default: 'customer' 
   },
   isEmailVerified: { type: Boolean, default: false },
+  emailVerificationToken: { type: String },
+  emailVerificationExpires: { type: Date },
   isActive: { type: Boolean, default: true },
   avatar: { type: String },
   addresses: [AddressSchema],

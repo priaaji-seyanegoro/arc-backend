@@ -1,9 +1,13 @@
-import jwt from "jsonwebtoken";
+import jwt, { SignOptions } from "jsonwebtoken";
 import { JWTPayload } from "../types/auth";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
 const JWT_REFRESH_SECRET =
   process.env.JWT_REFRESH_SECRET || "your-refresh-secret";
+
+if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
+  throw new Error("JWT secrets must be defined");
+}
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || "30d";
 
@@ -22,7 +26,7 @@ export const generateAccessToken = (payload: TokenPayload): string => {
     },
     JWT_SECRET,
     {
-      expiresIn: JWT_EXPIRES_IN,
+      expiresIn: JWT_EXPIRES_IN as any,
     }
   );
 };
@@ -36,7 +40,7 @@ export const generateRefreshToken = (payload: TokenPayload): string => {
     },
     JWT_REFRESH_SECRET,
     {
-      expiresIn: JWT_REFRESH_EXPIRES_IN,
+      expiresIn: JWT_REFRESH_EXPIRES_IN as any,
     }
   );
 };

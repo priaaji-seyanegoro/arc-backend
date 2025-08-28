@@ -6,7 +6,7 @@ export const handleValidationErrors = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   const errors = validationResult(req);
   
   if (!errors.isEmpty()) {
@@ -21,17 +21,18 @@ export const handleValidationErrors = (
       formattedErrors[field].push(error.msg);
     });
     
-    return sendError(
+    sendError(
       res,
       'Validation failed',
       'Please check your input data',
       400,
       formattedErrors
     );
+    return;
   }
   
   next();
-};
+}
 
 // Common validation rules
 export const emailValidation = () => 

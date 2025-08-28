@@ -2,9 +2,10 @@ import express, { Application, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
-import rateLimit from "express-rate-limit";
+import { generalLimiter } from "./middleware/rateLimiter";
 import { logger } from "./utils/logger";
 import mongoose from "mongoose";
+import { redisService } from "./services/redisService";
 
 // Import routes
 import authRoutes from "./routes/authRoutes";
@@ -13,6 +14,10 @@ import productRoutes from "./routes/productRoutes";
 import collectionRoutes from "./routes/collectionRoutes";
 import cartRoutes from "./routes/cartRoutes";
 import orderRoutes from "./routes/orderRoutes";
+import healthRoutes from "./routes/healthRoutes";
+import uploadRoutes from "./routes/uploadRoutes";
+import paymentRoutes from "./routes/paymentRoutes";
+import testRoutes from "./routes/testRoutes";
 
 const app: Application = express();
 
@@ -26,17 +31,15 @@ app.use(
 );
 
 // Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: "Too many requests from this IP, please try again later.",
-});
-app.use("/api", limiter); // Remove trailing slash
+app.use("/api", generalLimiter);
 
 // Body parsing middleware
 app.use(compression());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// Static file serving for uploads
+app.use('/uploads', express.static('uploads'));
 
 // Logging middleware
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -44,28 +47,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// Health check endpoint
-app.get("/health", (req: Request, res: Response) => {
-  const dbStatus = mongoose.connection.readyState;
-  const dbStatusMap: Record<number, string> = {
-    0: "disconnected",
-    1: "connected",
-    2: "connecting",
-    3: "disconnecting",
-  };
-  const dbStatusText = dbStatusMap[dbStatus] || "unknown";
-
-  res.status(200).json({
-    status: "OK",
-    message: "Action Romance Comedy Backend is running!",
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || "development",
-    database: {
-      status: dbStatusText,
-      readyState: dbStatus,
-    },
-  });
-});
+// Health check routes
+app.use("/api/health", healthRoutes);
 
 // API routes
 app.use("/api/auth", authRoutes);
@@ -74,6 +57,18 @@ app.use("/api/products", productRoutes);
 app.use("/api/collections", collectionRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/upload", uploadRoutes);
+app.use("/api/payments", paymentRoutes);
+
+// Test routes (only in development)
+if (process.env.NODE_ENV === 'development') {
+  app.use("/api/test", testRoutes);
+}
+
+// Legacy health check endpoint for backward compatibility
+app.get("/health", (req: Request, res: Response) => {
+  res.redirect(301, "/api/health");
+});
 
 // 404 handler
 app.use((req: Request, res: Response) => {

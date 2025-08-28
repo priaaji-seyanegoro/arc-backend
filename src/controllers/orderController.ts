@@ -2,8 +2,10 @@ import { Request, Response } from 'express';
 import Order from '../models/Order';
 import Cart from '../models/Cart';
 import Product from '../models/Product';
+import User from '../models/User';
 import { logger } from '../utils/logger';
 import { ApiResponse } from '../types/api';
+import { NotificationService } from '../services/notificationService';
 
 // Checkout - Convert cart to order
 export const checkout = async (req: Request, res: Response): Promise<void> => {
@@ -114,6 +116,20 @@ export const checkout = async (req: Request, res: Response): Promise<void> => {
       { user: userId },
       { $set: { items: [] } }
     );
+
+    // Send order confirmation notification
+    try {
+      const user = await User.findById(userId);
+      if (user) {
+        await NotificationService.sendOrderConfirmation(order, user);
+      }
+    } catch (notificationError) {
+      logger.error('Failed to send order confirmation notification', {
+        orderId: order._id,
+        error: notificationError instanceof Error ? notificationError.message : 'Unknown error'
+      });
+      // Don't fail the order creation if notification fails
+    }
 
     const response: ApiResponse = {
       success: true,
@@ -254,9 +270,24 @@ export const cancelOrder = async (req: Request, res: Response): Promise<void> =>
       );
     }
 
+    const previousStatus = order.status;
     order.status = 'cancelled';
     order.cancelReason = cancelReason;
     await order.save();
+
+    // Send cancellation notification
+    try {
+      const user = await User.findById(userId);
+      if (user) {
+        await NotificationService.handleOrderStatusChange(order, user, previousStatus, 'cancelled');
+      }
+    } catch (notificationError) {
+      logger.error('Failed to send order cancellation notification', {
+        orderId: order._id,
+        error: notificationError instanceof Error ? notificationError.message : 'Unknown error'
+      });
+      // Don't fail the cancellation if notification fails
+    }
 
     const response: ApiResponse = {
       success: true,
@@ -366,11 +397,28 @@ export const updateOrderStatus = async (req: Request, res: Response): Promise<vo
     }
 
     // Update status
+    const previousStatus = order.status;
     order.status = status;
     if (trackingNumber) order.trackingNumber = trackingNumber;
     if (estimatedDelivery) order.estimatedDelivery = new Date(estimatedDelivery);
 
     await order.save();
+
+    // Send status change notification
+    try {
+      const user = await User.findById(order.user);
+      if (user && previousStatus !== status) {
+        await NotificationService.handleOrderStatusChange(order, user, previousStatus, status);
+      }
+    } catch (notificationError) {
+      logger.error('Failed to send order status change notification', {
+        orderId: order._id,
+        previousStatus,
+        newStatus: status,
+        error: notificationError instanceof Error ? notificationError.message : 'Unknown error'
+      });
+      // Don't fail the status update if notification fails
+    }
 
     const response: ApiResponse = {
       success: true,
@@ -405,6 +453,9 @@ export const updatePaymentStatus = async (req: Request, res: Response): Promise<
       return;
     }
 
+    const previousPaymentStatus = order.paymentStatus;
+    const previousOrderStatus = order.status;
+    
     order.paymentStatus = paymentStatus;
     if (paymentId) order.paymentId = paymentId;
     if (paymentStatus === 'paid') {
@@ -416,6 +467,30 @@ export const updatePaymentStatus = async (req: Request, res: Response): Promise<
     }
 
     await order.save();
+
+    // Send payment and order status change notifications
+    try {
+      const user = await User.findById(order.user);
+      if (user) {
+        // Send payment status notification
+        if (previousPaymentStatus !== paymentStatus) {
+          await NotificationService.handlePaymentStatusChange(order, user, previousPaymentStatus, paymentStatus);
+        }
+        
+        // Send order status notification if it changed
+        if (previousOrderStatus !== order.status) {
+          await NotificationService.handleOrderStatusChange(order, user, previousOrderStatus, order.status);
+        }
+      }
+    } catch (notificationError) {
+      logger.error('Failed to send payment status change notification', {
+        orderId: order._id,
+        previousPaymentStatus,
+        newPaymentStatus: paymentStatus,
+        error: notificationError instanceof Error ? notificationError.message : 'Unknown error'
+      });
+      // Don't fail the payment update if notification fails
+    }
 
     const response: ApiResponse = {
       success: true,
